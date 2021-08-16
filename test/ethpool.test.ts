@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 import "@nomiclabs/hardhat-ethers";
 
 import { ETHPool__factory, ETHPool } from "../build/types";
-import { assert } from "console";
+import { itShouldThrow } from "./utils";
 
 const { getContractFactory, getSigners } = ethers;
 
@@ -63,13 +63,13 @@ describe("ETHPool", () => {
     it("cannot withdraw", async () => {
       await ethPool.depositEth({ value: 100 });
 
-      let error: any;
-      try {
-        await ethPool.withdrawEth(110);
-      } catch (e) {
-        error = e;
-      }
-      expect(error).to.be.instanceOf(Error);
+      itShouldThrow(
+        "insufficient funds",
+        async () => {
+          await ethPool.withdrawEth(110);
+        },
+        "revert"
+      );
 
       const currentUser0Balance = await ethPool.getMyEthBalance();
       expect(currentUser0Balance).to.eq(100);
@@ -81,18 +81,16 @@ describe("ETHPool", () => {
       await ethPool
         .connect(signers[0])
         .depositEth({ value: ethers.BigNumber.from(80) });
-      
-      await ethPool
-        .connect(signers[1])
-        .depositEth({ value: 20 });
-      
+
+      await ethPool.connect(signers[1]).depositEth({ value: 20 });
+
       await ethPool.distributeReward(500);
 
       let balance = await ethPool.getMyRewardBalance();
       expect(balance).to.eq(400);
       await ethPool.withdrawReward(400);
 
-      let myRewardTokens = await ethPool.balanceOf(signers[0].getAddress())
+      let myRewardTokens = await ethPool.balanceOf(signers[0].getAddress());
       //console.log(myRewardTokens.toNumber());
       expect(myRewardTokens).to.eq(400);
       balance = await ethPool.getMyRewardBalance();
@@ -102,11 +100,9 @@ describe("ETHPool", () => {
       await ethPool
         .connect(signers[0])
         .depositEth({ value: ethers.BigNumber.from(80) });
-      
-      await ethPool
-        .connect(signers[1])
-        .depositEth({ value: 20 });
-      
+
+      await ethPool.connect(signers[1]).depositEth({ value: 20 });
+
       await ethPool.distributeReward(500);
 
       let balance = await ethPool.getMyRewardBalance();
@@ -115,17 +111,16 @@ describe("ETHPool", () => {
       let error: any;
       try {
         await ethPool.withdrawReward(500);
-      }catch (e) {
+      } catch (e) {
         error = e;
       }
       expect(error).to.be.instanceOf(Error);
 
-      let myRewardTokens = await ethPool.balanceOf(signers[0].getAddress())
+      let myRewardTokens = await ethPool.balanceOf(signers[0].getAddress());
       //console.log(myRewardTokens.toNumber());
       expect(myRewardTokens).to.eq(0);
       balance = await ethPool.getMyRewardBalance();
       expect(balance).to.eq(400);
     });
   });
-
 });
