@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
 import "hardhat/console.sol";
-import "./HappyToken.sol";
 
 //references
 //https://programtheblockchain.com/posts/2018/01/05/writing-a-banking-contract/
@@ -9,10 +8,19 @@ import "./HappyToken.sol";
 //https://uploads-ssl.webflow.com/5ad71ffeb79acc67c8bcdaba/5ad8d1193a40977462982470_scalable-reward-distribution-paper.pdf
 
 
-contract ETHPool is Ownable {
 
-  constructor() Ownable() {
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract ETHPool is ERC20, Ownable {
+  
+  constructor() ERC20("HappyToken", "HTK") Ownable() {
   }
+
+  function mint(address to, uint256 amount) public onlyOwner {
+      _mint(to, amount);
+  }
+
 
   struct balance {
     uint eth;
@@ -22,7 +30,6 @@ contract ETHPool is Ownable {
 
   mapping(address => balance) public balancesOf;
   address[] accounts;
-  uint totalReward;
   
   function depositEth() public payable {
     require(msg.value > 0,"must deposit some eth");
@@ -43,24 +50,27 @@ contract ETHPool is Ownable {
     return balancesOf[msg.sender].eth;
   }
 
+  function getMyRewardBalance() public view returns (uint256) {
+    return balancesOf[msg.sender].reward;
+  }
+
   function getTotalEthBalance() public view returns (uint256) {
     return address(this).balance;
   }
 
-  function distributeReward() public onlyOwner {
+  function distributeReward(uint totalReward) public onlyOwner {
     for (uint i=0; i < accounts.length; i++) {
       address account = accounts[i];
-      //TODO: fix possible overflows
-      uint stake = balancesOf[account].eth / address(this).balance;
-      balancesOf[account].reward = totalReward * stake;
+      //TODO: fix this hack
+      uint stake = balancesOf[account].eth * 1000000 / address(this).balance;
+      balancesOf[account].reward = totalReward * stake / 1000000;
+      //console.log("reward ", balancesOf[account].reward);
     }
   }
 
   function withdrawReward(uint256 amount) public {
     require(amount <= balancesOf[msg.sender].reward,"cannot withdraw more than you have!");
     balancesOf[msg.sender].reward -= amount;
-    //TODO
-    //payable(msg.sender).transfer(amount);
+    _mint(msg.sender, amount);
   }
-
 }

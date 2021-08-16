@@ -3,6 +3,7 @@ import { ethers } from "hardhat";
 import "@nomiclabs/hardhat-ethers";
 
 import { ETHPool__factory, ETHPool } from "../build/types";
+import { assert } from "console";
 
 const { getContractFactory, getSigners } = ethers;
 
@@ -19,7 +20,7 @@ describe("ETHPool", () => {
       signers[0]
     )) as ETHPool__factory;
     ethPool = await ethPoolFactory.deploy();
-    await ethPool.deployed();
+    const contract = await ethPool.deployed();
     const initialBalance = await ethPool.getMyEthBalance();
 
     // 3
@@ -74,4 +75,57 @@ describe("ETHPool", () => {
       expect(currentUser0Balance).to.eq(100);
     });
   });
+
+  describe("reward", async () => {
+    it("obtains reward", async () => {
+      await ethPool
+        .connect(signers[0])
+        .depositEth({ value: ethers.BigNumber.from(80) });
+      
+      await ethPool
+        .connect(signers[1])
+        .depositEth({ value: 20 });
+      
+      await ethPool.distributeReward(500);
+
+      let balance = await ethPool.getMyRewardBalance();
+      expect(balance).to.eq(400);
+      await ethPool.withdrawReward(400);
+
+      let myRewardTokens = await ethPool.balanceOf(signers[0].getAddress())
+      //console.log(myRewardTokens.toNumber());
+      expect(myRewardTokens).to.eq(400);
+      balance = await ethPool.getMyRewardBalance();
+      expect(balance).to.eq(0);
+    });
+    it("doesn't obtain reward", async () => {
+      await ethPool
+        .connect(signers[0])
+        .depositEth({ value: ethers.BigNumber.from(80) });
+      
+      await ethPool
+        .connect(signers[1])
+        .depositEth({ value: 20 });
+      
+      await ethPool.distributeReward(500);
+
+      let balance = await ethPool.getMyRewardBalance();
+      expect(balance).to.eq(400);
+
+      let error: any;
+      try {
+        await ethPool.withdrawReward(500);
+      }catch (e) {
+        error = e;
+      }
+      expect(error).to.be.instanceOf(Error);
+
+      let myRewardTokens = await ethPool.balanceOf(signers[0].getAddress())
+      //console.log(myRewardTokens.toNumber());
+      expect(myRewardTokens).to.eq(0);
+      balance = await ethPool.getMyRewardBalance();
+      expect(balance).to.eq(400);
+    });
+  });
+
 });
