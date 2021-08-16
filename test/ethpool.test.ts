@@ -1,7 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import "@nomiclabs/hardhat-ethers";
-import { BigNumber } from "bignumber.js";
 
 import { ETHPool__factory, ETHPool } from "../build/types";
 
@@ -31,7 +30,7 @@ describe("ETHPool", () => {
     it("should be deposited", async () => {
       await ethPool
         .connect(signers[0])
-        .depositEth({ value: new BigNumber(100).toFixed() });
+        .depositEth({ value: ethers.BigNumber.from(100) });
       const currentUser0Balance = await ethPool
         .connect(signers[0])
         .getMyEthBalance();
