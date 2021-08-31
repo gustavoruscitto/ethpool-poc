@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
-import "hardhat/console.sol";
-
-//references
-//https://programtheblockchain.com/posts/2018/01/05/writing-a-banking-contract/
-//https://medium.com/@robhitchens/solidity-crud-epilogue-e563e794fde
-//https://uploads-ssl.webflow.com/5ad71ffeb79acc67c8bcdaba/5ad8d1193a40977462982470_scalable-reward-distribution-paper.pdf
-
+//import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -61,10 +55,9 @@ contract ETHPool2 is ERC20, Ownable {
   function distributeReward(uint256 totalReward) public onlyOwner {
     for (uint256 i = 0; i < accounts.length; i++) {
       address account = accounts[i];
-      //TODO: fix this hack
-      uint256 stake =
-        (balancesOf[account].eth * 1000000) / address(this).balance;
-      balancesOf[account].reward = (totalReward * stake) / 1000000;
+      balancesOf[account].reward =
+        (totalReward * balancesOf[account].eth) /
+        address(this).balance;
       emit rewardDistributed(totalReward);
     }
   }

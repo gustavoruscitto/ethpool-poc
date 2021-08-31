@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -46,12 +46,9 @@ contract ETHPool is Ownable {
   function distributeReward() public payable onlyOwner {
     require(msg.value > 0, "must deposit some eth");
     uint256 total = address(this).balance - msg.value;
-    console.log("total balance", total);
     for (uint256 i = 0; i < accounts.length; i++) {
       address account = accounts[i];
-      uint256 stake = (balancesOf[account].eth * 1000000) / total;
-      console.log("balance", account, balancesOf[account].eth);
-      balancesOf[account].eth += (msg.value * stake) / 1000000;
+      balancesOf[account].eth += (msg.value * balancesOf[account].eth) / total;
       emit rewardDistributed(msg.value);
     }
   }

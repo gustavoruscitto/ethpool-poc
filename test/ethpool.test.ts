@@ -110,4 +110,31 @@ describe("ETHPool", () => {
       expect(currentUser0Balance).to.eq(480);
     });
   });
+
+  describe("reward for small stakes", async () => {
+    it("obtains reward", async () => {
+      //1000 ethers
+      await ethPool
+        .connect(signers[0])
+        .deposit({ value: ethers.BigNumber.from("1000000000000000000000") });
+
+      //0.1 ether
+      await ethPool
+        .connect(signers[1])
+        .deposit({ value: ethers.BigNumber.from("100000000000000000") });
+
+      //0.5 ether
+      await ethPool.distributeReward({
+        value: ethers.BigNumber.from("500000000000000000"),
+      });
+
+      const currentUser1Balance = await ethPool
+        .connect(signers[1])
+        .getMyBalance();
+
+      expect(currentUser1Balance).to.eq(
+        ethers.BigNumber.from("100049995000499950")
+      );
+    });
+  });
 });
